@@ -8,10 +8,10 @@ import (
 )
 
 type SubscriberService struct {
-	repo repository.SubscriberRepository
+	repo *repository.SubscriberRepository
 }
 
-func NewSubscriberService(repo repository.SubscriberRepository) *SubscriberService {
+func NewSubscriberService(repo *repository.SubscriberRepository) *SubscriberService {
 	return &SubscriberService{repo: repo}
 }
 

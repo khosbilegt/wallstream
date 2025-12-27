@@ -37,3 +37,18 @@ func (r *UsersRepository) GetUserByUsername(ctx context.Context, username string
 	err := r.col.FindOne(ctx, bson.M{"username": username}).Decode(&user)
 	return &user, err
 }
+
+func (r *UsersRepository) GetUserByAPIKey(ctx context.Context, apiKey string) (*User, error) {
+	var user User
+	err := r.col.FindOne(ctx, bson.M{"api_key": apiKey}).Decode(&user)
+	return &user, err
+}
+
+func (r *UsersRepository) UpdateUserAPIKey(ctx context.Context, userID, apiKey string) error {
+	_, err := r.col.UpdateOne(
+		ctx,
+		bson.M{"id": userID},
+		bson.M{"$set": bson.M{"api_key": apiKey}},
+	)
+	return err
+}

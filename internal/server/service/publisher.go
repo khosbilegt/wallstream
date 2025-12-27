@@ -8,10 +8,10 @@ import (
 )
 
 type PublisherService struct {
-	repo repository.PublisherRepository
+	repo *repository.PublisherRepository
 }
 
-func NewPublisherService(repo repository.PublisherRepository) *PublisherService {
+func NewPublisherService(repo *repository.PublisherRepository) *PublisherService {
 	return &PublisherService{repo: repo}
 }
 

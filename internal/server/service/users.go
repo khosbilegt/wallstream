@@ -9,10 +9,10 @@ import (
 )
 
 type UsersService struct {
-	repo repository.UsersRepository
+	repo *repository.UsersRepository
 }
 
-func NewUsersService(repo repository.UsersRepository) *UsersService {
+func NewUsersService(repo *repository.UsersRepository) *UsersService {
 	return &UsersService{repo: repo}
 }
 
@@ -49,4 +49,12 @@ func (s *UsersService) GetUserByID(ctx context.Context, id string) (*repository.
 
 func (s *UsersService) GetUserByUsername(ctx context.Context, username string) (*repository.User, error) {
 	return s.repo.GetUserByUsername(ctx, username)
+}
+
+func (s *UsersService) GetUserByAPIKey(ctx context.Context, apiKey string) (*repository.User, error) {
+	return s.repo.GetUserByAPIKey(ctx, apiKey)
+}
+
+func (s *UsersService) UpdateUserAPIKey(ctx context.Context, userID, apiKey string) error {
+	return s.repo.UpdateUserAPIKey(ctx, userID, apiKey)
 }

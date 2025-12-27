@@ -14,8 +14,14 @@ type Handlers struct {
 	usersService      *service.UsersService
 	publisherService  *service.PublisherService
 	subscriberService *service.SubscriberService
-	jwtService        *service.JWTService
-	refreshTokensRepo *repository.RefreshTokensRepository
+}
+
+func NewHandlers(usersService *service.UsersService, publisherService *service.PublisherService, subscriberService *service.SubscriberService) *Handlers {
+	return &Handlers{
+		usersService:      usersService,
+		publisherService:  publisherService,
+		subscriberService: subscriberService,
+	}
 }
 
 func (h *Handlers) GetPublisherState(w http.ResponseWriter, r *http.Request) {
@@ -86,33 +92,36 @@ func (h *Handlers) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Set timestamps
+	now := time.Now().Unix()
+	user.CreatedAt = now
+	user.UpdatedAt = now
+
 	err = h.usersService.CreateUser(ctx, &user, user.Password)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Generate JWT tokens
-	tokenPair, err := h.jwtService.GenerateTokenPair(user.ID, user.Username)
+	// Generate API key
+	apiKey, err := service.GenerateAPIKey()
 	if err != nil {
-		http.Error(w, "failed to generate tokens", http.StatusInternalServerError)
+		http.Error(w, "failed to generate API key", http.StatusInternalServerError)
 		return
 	}
 
-	// Save refresh token to database
-	refreshToken := &repository.RefreshToken{
-		Token:     tokenPair.RefreshToken,
-		UserID:    user.ID,
-		ExpiresAt: time.Now().Add(7 * 24 * time.Hour).Unix(),
-		CreatedAt: time.Now().Unix(),
-	}
-	if err := h.refreshTokensRepo.SaveRefreshToken(ctx, refreshToken); err != nil {
-		http.Error(w, "failed to save refresh token", http.StatusInternalServerError)
+	// Save API key to user
+	err = h.usersService.UpdateUserAPIKey(ctx, user.ID, apiKey)
+	if err != nil {
+		http.Error(w, "failed to save API key", http.StatusInternalServerError)
 		return
 	}
 
+	// Return user with API key (don't send password)
+	user.Password = ""
+	user.APIKey = apiKey
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(tokenPair)
+	json.NewEncoder(w).Encode(user)
 }
 
 func (h *Handlers) LoginUser(w http.ResponseWriter, r *http.Request) {
@@ -133,94 +142,23 @@ func (h *Handlers) LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Generate JWT tokens
-	tokenPair, err := h.jwtService.GenerateTokenPair(user.ID, user.Username)
-	if err != nil {
-		http.Error(w, "failed to generate tokens", http.StatusInternalServerError)
-		return
+	// Generate new API key if user doesn't have one
+	if user.APIKey == "" {
+		apiKey, err := service.GenerateAPIKey()
+		if err != nil {
+			http.Error(w, "failed to generate API key", http.StatusInternalServerError)
+			return
+		}
+		err = h.usersService.UpdateUserAPIKey(ctx, user.ID, apiKey)
+		if err != nil {
+			http.Error(w, "failed to save API key", http.StatusInternalServerError)
+			return
+		}
+		user.APIKey = apiKey
 	}
 
-	// Delete old refresh tokens for this user (optional: for single device login)
-	// h.refreshTokensRepo.DeleteUserRefreshTokens(ctx, user.ID)
-
-	// Save refresh token to database
-	refreshToken := &repository.RefreshToken{
-		Token:     tokenPair.RefreshToken,
-		UserID:    user.ID,
-		ExpiresAt: time.Now().Add(7 * 24 * time.Hour).Unix(),
-		CreatedAt: time.Now().Unix(),
-	}
-	if err := h.refreshTokensRepo.SaveRefreshToken(ctx, refreshToken); err != nil {
-		http.Error(w, "failed to save refresh token", http.StatusInternalServerError)
-		return
-	}
-
+	// Don't send password back
+	user.Password = ""
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(tokenPair)
-}
-
-func (h *Handlers) RefreshToken(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
-	var refreshReq struct {
-		RefreshToken string `json:"refresh_token"`
-	}
-	err := json.NewDecoder(r.Body).Decode(&refreshReq)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// Validate refresh token
-	claims, err := h.jwtService.ValidateRefreshToken(refreshReq.RefreshToken)
-	if err != nil {
-		http.Error(w, "invalid refresh token", http.StatusUnauthorized)
-		return
-	}
-
-	// Check if refresh token exists in database
-	storedToken, err := h.refreshTokensRepo.GetRefreshToken(ctx, refreshReq.RefreshToken)
-	if err != nil {
-		http.Error(w, "refresh token not found", http.StatusUnauthorized)
-		return
-	}
-
-	// Check if token is expired
-	if time.Now().Unix() > storedToken.ExpiresAt {
-		// Clean up expired token
-		h.refreshTokensRepo.DeleteRefreshToken(ctx, refreshReq.RefreshToken)
-		http.Error(w, "refresh token expired", http.StatusUnauthorized)
-		return
-	}
-
-	// Get user to verify they still exist
-	user, err := h.usersService.GetUserByID(ctx, claims.UserID)
-	if err != nil {
-		http.Error(w, "user not found", http.StatusUnauthorized)
-		return
-	}
-
-	// Generate new token pair
-	tokenPair, err := h.jwtService.GenerateTokenPair(user.ID, user.Username)
-	if err != nil {
-		http.Error(w, "failed to generate tokens", http.StatusInternalServerError)
-		return
-	}
-
-	// Delete old refresh token
-	h.refreshTokensRepo.DeleteRefreshToken(ctx, refreshReq.RefreshToken)
-
-	// Save new refresh token
-	refreshToken := &repository.RefreshToken{
-		Token:     tokenPair.RefreshToken,
-		UserID:    user.ID,
-		ExpiresAt: time.Now().Add(7 * 24 * time.Hour).Unix(),
-		CreatedAt: time.Now().Unix(),
-	}
-	if err := h.refreshTokensRepo.SaveRefreshToken(ctx, refreshToken); err != nil {
-		http.Error(w, "failed to save refresh token", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(tokenPair)
+	json.NewEncoder(w).Encode(user)
 }

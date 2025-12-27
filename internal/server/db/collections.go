@@ -6,7 +6,6 @@ type Collections struct {
 	Users           *mongo.Collection
 	PublisherState  *mongo.Collection
 	SubscriberState *mongo.Collection
-	RefreshTokens   *mongo.Collection
 }
 
 func NewCollections(db *mongo.Database) *Collections {
@@ -14,6 +13,5 @@ func NewCollections(db *mongo.Database) *Collections {
 		Users:           db.Collection("users"),
 		PublisherState:  db.Collection("publisher_states"),
 		SubscriberState: db.Collection("subscriber_states"),
-		RefreshTokens:   db.Collection("refresh_tokens"),
 	}
 }
