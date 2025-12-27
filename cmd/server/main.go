@@ -29,6 +29,9 @@ func main() {
 		port = "8080"
 	}
 
+	// Load templates
+	api.LoadTemplates()
+
 	// Connect to MongoDB
 	log.Println("Connecting to MongoDB...")
 	client, err := db.Connect(mongoURI)

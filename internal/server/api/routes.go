@@ -21,6 +21,9 @@ func (rts *Routes) RegisterRoutes() {
 	rts.r.Use(middleware.Logger)
 	rts.r.Use(middleware.Recoverer)
 
+	// Web routes
+	rts.r.Get("/", rts.handlers.WebIndex)
+
 	// Public routes
 	rts.r.Post("/users/register", rts.handlers.RegisterUser)
 	rts.r.Post("/users/login", rts.handlers.LoginUser)

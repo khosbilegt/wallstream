@@ -162,3 +162,15 @@ func (h *Handlers) LoginUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(user)
 }
+
+func (h *Handlers) WebIndex(w http.ResponseWriter, r *http.Request) {
+	data := struct {
+		Title string
+	}{
+		Title: "Wallcast Dashboard",
+	}
+	err := templates.ExecuteTemplate(w, "index.html", data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
