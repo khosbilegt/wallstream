@@ -6,15 +6,16 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.io/khosbilegt/wallstream/internal/client/platform/windows"
 	"github.io/khosbilegt/wallstream/internal/core"
-	"github.io/khosbilegt/wallstream/internal/platform/windows"
 )
 
 func main() {
+	log.Println("Starting Wallstream Client...")
 	cfg, _ := core.DefaultConfig()
 	wp := windows.New()
 
-	agent, _ := core.NewAgent(cfg, wp, false) // false = subscriber
+	agent, _ := core.NewAgent(cfg, wp, false)
 
 	stop := make(chan struct{})
 	go agent.Run("publisher123", "http://localhost:8080", stop)
@@ -25,5 +26,5 @@ func main() {
 	<-c
 	close(stop)
 
-	log.Println("Agent stopped")
+	log.Println("Wallstream Client stopped")
 }

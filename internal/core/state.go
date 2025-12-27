@@ -3,6 +3,7 @@ package core
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -34,16 +35,20 @@ func NewStateManager(dir string) (*StateManager, error) {
 // Load reads the state from disk. Returns empty state if file does not exist.
 func (m *StateManager) Load() (*State, error) {
 	data, err := os.ReadFile(m.FilePath)
+	log.Default().Println("Loading state from", m.FilePath)
 	if os.IsNotExist(err) {
+		log.Default().Println("State file does not exist, creating new state")
 		return &State{}, nil
 	}
 	if err != nil {
+		log.Default().Println("Failed to read state file:", err)
 		return nil, fmt.Errorf("failed to read state file: %w", err)
 	}
 
 	var s State
 	if err := json.Unmarshal(data, &s); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal state: %w", err)
+		log.Default().Println("Failed to unmarshal state file, recreating state:", err)
+		return &State{}, nil
 	}
 	return &s, nil
 }

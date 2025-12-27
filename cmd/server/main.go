@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/redis/go-redis/v9"
 	"github.io/khosbilegt/wallstream/internal/server"
 )
 
@@ -19,7 +20,14 @@ func main() {
 	)
 	flag.Parse()
 
-	srv, err := server.NewServer(*wallpapersDir, *baseURL)
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "", // no password
+		DB:       0,  // use default DB
+		Protocol: 2,
+	})
+
+	srv, err := server.NewServer(*wallpapersDir, *baseURL, rdb)
 	if err != nil {
 		log.Fatalf("Failed to create server: %v", err)
 	}

@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/sys/windows/registry"
 
-	"github.io/khosbilegt/wallstream/internal/platform"
+	"github.io/khosbilegt/wallstream/internal/client/platform"
 )
 
 const (

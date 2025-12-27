@@ -4,8 +4,8 @@ import (
 	"log"
 	"time"
 
+	"github.io/khosbilegt/wallstream/internal/client/platform"
 	"github.io/khosbilegt/wallstream/internal/core/assets"
-	"github.io/khosbilegt/wallstream/internal/platform"
 )
 
 // Agent represents the wallpaper agent
@@ -46,6 +46,7 @@ func (a *Agent) Run(publisherID, serverURL string, stopCh <-chan struct{}) {
 
 // runPublisher detects wallpaper changes and pushes to server
 func (a *Agent) runPublisher(publisherID, serverURL string, stopCh <-chan struct{}) {
+	log.Default().Println("Running publisher")
 	state, err := a.StateManager.Load()
 	if err != nil {
 		log.Printf("Failed to load state: %v", err)
@@ -99,6 +100,7 @@ func (a *Agent) runPublisher(publisherID, serverURL string, stopCh <-chan struct
 
 // runSubscriber polls server and applies wallpaper if changed
 func (a *Agent) runSubscriber(publisherID, serverURL string, stopCh <-chan struct{}) {
+	log.Default().Println("Running subscriber")
 	// Load last state
 	state, err := a.StateManager.Load()
 	if err != nil {

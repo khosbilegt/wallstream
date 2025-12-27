@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.io/khosbilegt/wallstream/internal/client/platform"
 	"github.io/khosbilegt/wallstream/internal/core/assets"
-	"github.io/khosbilegt/wallstream/internal/platform"
 )
 
 // PublisherState represents the wallpaper state on the server
@@ -56,7 +56,7 @@ func (s *Syncer) PollPublisher(publisherID string, serverURL string, stopCh <-ch
 
 // checkAndApply fetches the latest state and applies wallpaper if hash changed
 func (s *Syncer) checkAndApply(publisherID, serverURL string) error {
-	// 1️⃣ Fetch state from server
+	log.Default().Println("Fetching publisher state from", serverURL, "/state/", publisherID)
 	url := fmt.Sprintf("%s/state/%s", serverURL, publisherID)
 	resp, err := s.Client.Get(url)
 	if err != nil {
