@@ -20,7 +20,7 @@ func main() {
 	// Get MongoDB URI from environment or use default
 	mongoURI := os.Getenv("MONGODB_URI")
 	if mongoURI == "" {
-		mongoURI = "mongodb://localhost:27017"
+		mongoURI = "mongodb://localhost:27017/wallstream"
 	}
 
 	// Get server port from environment or use default

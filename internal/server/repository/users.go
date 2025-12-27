@@ -35,7 +35,16 @@ func (r *UsersRepository) GetUserByID(ctx context.Context, id string) (*User, er
 func (r *UsersRepository) GetUserByUsername(ctx context.Context, username string) (*User, error) {
 	var user User
 	err := r.col.FindOne(ctx, bson.M{"username": username}).Decode(&user)
-	return &user, err
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			// User not found → return nil, no error
+			return nil, nil
+		}
+		// Other errors (connection, decode, etc.)
+		return nil, err
+	}
+
+	return &user, nil
 }
 
 func (r *UsersRepository) GetUserByAPIKey(ctx context.Context, apiKey string) (*User, error) {

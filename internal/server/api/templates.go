@@ -15,4 +15,5 @@ func LoadTemplates() {
 	if err != nil {
 		log.Fatalf("failed to load templates: %v", err)
 	}
+	log.Println("Templates loaded successfully")
 }

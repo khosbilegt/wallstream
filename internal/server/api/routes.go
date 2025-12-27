@@ -25,19 +25,18 @@ func (rts *Routes) RegisterRoutes() {
 	rts.r.Get("/", rts.handlers.WebIndex)
 
 	// Public routes
-	rts.r.Post("/users/register", rts.handlers.RegisterUser)
-	rts.r.Post("/users/login", rts.handlers.LoginUser)
+	rts.r.Post("/api/users/register", rts.handlers.CreateUser)
 
 	// Protected routes (API key authentication)
 	rts.r.Group(func(r chi.Router) {
 		r.Use(rts.handlers.AuthMiddleware)
 
 		// Publisher
-		r.Get("/publisher/state", rts.handlers.GetPublisherState)
-		r.Post("/publisher/state", rts.handlers.CreatePublisherState)
+		r.Get("/api/publisher/state", rts.handlers.GetPublisherState)
+		r.Post("/api/publisher/state", rts.handlers.CreatePublisherState)
 
 		// Subscriber
-		r.Get("/subscriber/state", rts.handlers.GetSubscriberState)
-		r.Post("/subscriber/state", rts.handlers.CreateSubscriberState)
+		r.Get("/api/subscriber/state", rts.handlers.GetSubscriberState)
+		r.Post("/api/subscriber/state", rts.handlers.CreateSubscriberState)
 	})
 }
