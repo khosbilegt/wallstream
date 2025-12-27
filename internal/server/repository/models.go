@@ -8,16 +8,20 @@ type User struct {
 	UpdatedAt int64  `json:"updated_at" bson:"updated_at"`
 }
 
-type PublisherState struct {
-	ID        string `json:"id"`
-	Hash      string `json:"hash"`
-	URL       string `json:"url"`
-	Timestamp int64  `json:"timestamp"`
+type PublisherDevice struct {
+	ID        string `json:"id" bson:"id"`
+	UserID    string `json:"user_id" bson:"user_id"`
+	DeviceID  string `json:"device_id" bson:"device_id"`
+	CreatedAt int64  `json:"created_at" bson:"created_at"`
+	UpdatedAt int64  `json:"updated_at" bson:"updated_at"`
 }
 
-type SubscriberState struct {
-	ID        string `json:"id"`
-	Hash      string `json:"hash"`
-	URL       string `json:"url"`
-	Timestamp int64  `json:"timestamp"`
+type PublishedWallpaper struct {
+	ID        string `json:"id" bson:"id"`
+	UserID    string `json:"user_id" bson:"user_id"`
+	DeviceID  string `json:"device_id" bson:"device_id"`
+	Hash      string `json:"hash" bson:"hash"`
+	URL       string `json:"url" bson:"url"`
+	CreatedAt int64  `json:"created_at" bson:"created_at"`
+	UpdatedAt int64  `json:"updated_at" bson:"updated_at"`
 }

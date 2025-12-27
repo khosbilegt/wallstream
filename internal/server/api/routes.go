@@ -30,13 +30,11 @@ func (rts *Routes) RegisterRoutes() {
 	// Protected routes (API key authentication)
 	rts.r.Group(func(r chi.Router) {
 		r.Use(rts.handlers.AuthMiddleware)
+		r.Post("/api/files/upload", rts.handlers.UploadWallpaper)
 
-		// Publisher
-		r.Get("/api/publisher/state", rts.handlers.GetPublisherState)
-		r.Post("/api/publisher/state", rts.handlers.CreatePublisherState)
-
-		// Subscriber
-		r.Get("/api/subscriber/state", rts.handlers.GetSubscriberState)
-		r.Post("/api/subscriber/state", rts.handlers.CreateSubscriberState)
+		r.Post("/api/publisher/devices", rts.handlers.CreatePublisherDevice)
+		r.Get("/api/publisher/devices", rts.handlers.GetPublisherDevices)
+		r.Get("/api/publisher/devices/{deviceID}", rts.handlers.GetPublisherDeviceByDeviceID)
+		r.Delete("/api/publisher/devices/{deviceID}", rts.handlers.DeletePublisherDeviceByDeviceID)
 	})
 }

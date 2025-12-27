@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.io/khosbilegt/wallstream/internal/server/repository"
+	"github.io/khosbilegt/wallstream/internal/server/utils"
 )
 
 type UsersService struct {
@@ -27,7 +28,7 @@ func (s *UsersService) CreateUser(ctx context.Context, username string) (string,
 		return "", errors.New("user already exists")
 	}
 
-	apiKey, err := GenerateAPIKey()
+	apiKey, err := utils.GenerateAPIKey()
 	if err != nil {
 		return "", err
 	}

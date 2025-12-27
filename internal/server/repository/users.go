@@ -37,10 +37,8 @@ func (r *UsersRepository) GetUserByUsername(ctx context.Context, username string
 	err := r.col.FindOne(ctx, bson.M{"username": username}).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			// User not found → return nil, no error
 			return nil, nil
 		}
-		// Other errors (connection, decode, etc.)
 		return nil, err
 	}
 
@@ -59,5 +57,10 @@ func (r *UsersRepository) UpdateUserAPIKey(ctx context.Context, userID, apiKey s
 		bson.M{"id": userID},
 		bson.M{"$set": bson.M{"api_key": apiKey}},
 	)
+	return err
+}
+
+func (r *UsersRepository) DeleteUserByID(ctx context.Context, id string) error {
+	_, err := r.col.DeleteOne(ctx, bson.M{"id": id})
 	return err
 }

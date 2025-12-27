@@ -54,16 +54,17 @@ func main() {
 
 	// Initialize repositories
 	usersRepo := repository.NewUsersRepository(collections.Users)
-	publisherRepo := repository.NewPublisherRepository(collections.PublisherState)
-	subscriberRepo := repository.NewSubscriberRepository(collections.SubscriberState)
+	publisherRepo := repository.NewPublisherDeviceRepository(collections.PublisherDevices)
+	publishedWallpaperRepo := repository.NewPublishedWallpaperRepository(collections.PublishedWallpapers)
 
 	// Initialize services
 	usersService := service.NewUsersService(usersRepo)
-	publisherService := service.NewPublisherService(publisherRepo)
-	subscriberService := service.NewSubscriberService(subscriberRepo)
+
+	fileService := service.NewFileService("uploads")
+	publisherService := service.NewPublisherService(publisherRepo, publishedWallpaperRepo)
 
 	// Initialize handlers
-	handlers := api.NewHandlers(usersService, publisherService, subscriberService)
+	handlers := api.NewHandlers(usersService, fileService, publisherService)
 
 	// Setup routes with Chi router
 	router := chi.NewRouter()

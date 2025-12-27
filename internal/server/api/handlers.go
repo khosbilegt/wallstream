@@ -5,21 +5,20 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.io/khosbilegt/wallstream/internal/server/repository"
 	"github.io/khosbilegt/wallstream/internal/server/service"
 )
 
 type Handlers struct {
-	usersService      *service.UsersService
-	publisherService  *service.PublisherService
-	subscriberService *service.SubscriberService
+	usersService     *service.UsersService
+	fileService      *service.FileService
+	publisherService *service.PublisherService
 }
 
-func NewHandlers(usersService *service.UsersService, publisherService *service.PublisherService, subscriberService *service.SubscriberService) *Handlers {
+func NewHandlers(usersService *service.UsersService, fileService *service.FileService, publisherService *service.PublisherService) *Handlers {
 	return &Handlers{
-		usersService:      usersService,
-		publisherService:  publisherService,
-		subscriberService: subscriberService,
+		usersService:     usersService,
+		fileService:      fileService,
+		publisherService: publisherService,
 	}
 }
 
@@ -49,58 +48,6 @@ func (h *Handlers) CreateUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"username": req.Username, "api_key": apiKey})
 }
 
-func (h *Handlers) GetPublisherState(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
-	id := r.URL.Query().Get("id")
-	state, err := h.publisherService.GetPublisherState(ctx, id)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	json.NewEncoder(w).Encode(state)
-}
-
-func (h *Handlers) GetSubscriberState(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
-	id := r.URL.Query().Get("id")
-	state, err := h.subscriberService.GetSubscriberState(ctx, id)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	json.NewEncoder(w).Encode(state)
-}
-
-func (h *Handlers) CreatePublisherState(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
-	var state repository.PublisherState
-	err := json.NewDecoder(r.Body).Decode(&state)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	err = h.publisherService.CreatePublisherState(ctx, &state)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-func (h *Handlers) CreateSubscriberState(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
-	var state repository.SubscriberState
-	err := json.NewDecoder(r.Body).Decode(&state)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	err = h.subscriberService.CreateSubscriberState(ctx, &state)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
 func (h *Handlers) WebIndex(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Title string
@@ -111,4 +58,136 @@ func (h *Handlers) WebIndex(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+func (h *Handlers) CreatePublisherDevice(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get the user ID from the request context
+	userID := r.Context().Value("user_id").(string)
+
+	// Define a struct matching the expected JSON
+	var req struct {
+		DeviceID string `json:"device_id"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, "invalid JSON body", http.StatusBadRequest)
+		return
+	}
+
+	// Check if the device ID is already in use
+	publisherDevice, err := h.publisherService.GetPublisherDeviceByDeviceID(r.Context(), req.DeviceID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if publisherDevice != nil {
+		http.Error(w, "device ID already in use", http.StatusBadRequest)
+		return
+	}
+
+	err = h.publisherService.CreatePublisherDevice(r.Context(), userID, req.DeviceID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{"device_id": req.DeviceID})
+}
+
+func (h *Handlers) GetPublisherDevices(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get the user ID from the request context
+	userID := r.Context().Value("user_id").(string)
+
+	publisherDevices, err := h.publisherService.GetPublisherDevicesByUserID(r.Context(), userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(publisherDevices)
+}
+
+func (h *Handlers) GetPublisherDeviceByDeviceID(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get the device ID from the request context
+	deviceID := r.Context().Value("device_id").(string)
+
+	publisherDevice, err := h.publisherService.GetPublisherDeviceByDeviceID(r.Context(), deviceID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(publisherDevice)
+}
+
+func (h *Handlers) DeletePublisherDeviceByDeviceID(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get the device ID from the request context
+	deviceID := r.Context().Value("device_id").(string)
+
+	err := h.publisherService.DeletePublisherDeviceByDeviceID(r.Context(), deviceID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+// Upload wallpaper to the server
+func (h *Handlers) UploadWallpaper(w http.ResponseWriter, r *http.Request) {
+	file, fileHeader, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	filename, err := h.fileService.UploadFileStream(r.Context(), file, fileHeader.Filename)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{"filename": filename})
+
+}
+
+func (h *Handlers) GetUploadURL(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get the user ID from the request context
+	userID := r.Context().Value("user_id").(string)
+
+	// Get the device ID from the request context
+	deviceID := r.Context().Value("device_id").(string)
+
+	uploadURL, err := h.publisherService.GenerateUploadURL(r.Context(), userID, deviceID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{"upload_url": uploadURL})
 }
