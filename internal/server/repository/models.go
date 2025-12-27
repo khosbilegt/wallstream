@@ -21,3 +21,10 @@ type SubscriberState struct {
 	URL       string `json:"url"`
 	Timestamp int64  `json:"timestamp"`
 }
+
+type RefreshToken struct {
+	Token     string `json:"token" bson:"token"`
+	UserID    string `json:"user_id" bson:"user_id"`
+	ExpiresAt int64  `json:"expires_at" bson:"expires_at"`
+	CreatedAt int64  `json:"created_at" bson:"created_at"`
+}
