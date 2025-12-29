@@ -76,10 +76,20 @@ func (s *PublisherService) PublishUploadedWallpaper(ctx context.Context, userID,
 	if publisherDevice.UserID != userID {
 		return fmt.Errorf("publisher device not found for user %s", userID)
 	}
+	// Check hash of the file exists in the database
 	filePath := "uploads/" + filename
 	hash, err := assets.HashFile(filePath)
+
 	if err != nil {
 		return err
+	}
+
+	previousPublishedWallpaper, err := s.publishedWallpaperRepo.GetPublishedWallpaperByHash(ctx, hash)
+	if err != nil {
+		return err
+	}
+	if previousPublishedWallpaper != nil {
+		return fmt.Errorf("published wallpaper already exists for hash %s", hash)
 	}
 	publishedWallpaper := &repository.PublishedWallpaper{
 		ID:        uuid.New().String(),
@@ -109,4 +119,8 @@ func (s *PublisherService) GetPublishedWallpapersByDeviceID(ctx context.Context,
 		}
 	}
 	return publishedWallpapers, nil
+}
+
+func (s *PublisherService) DeletePublishedWallpaperByHash(ctx context.Context, userID, hash string) error {
+	return s.publishedWallpaperRepo.DeletePublishedWallpaperByHash(ctx, hash)
 }

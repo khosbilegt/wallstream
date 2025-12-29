@@ -5,6 +5,8 @@
 
 Wallstream is meant to allow people to subscribe to someone else's wallpaper, where if they change theirs, yours downloads the new one and sets it on your computer.
 
+Or if you're a nerd like me that wants all his devices to have a synced wallpaper across ecosystems that actively hate each other (this repo was made by Windows/Mac/Linux user gang).
+
 ## Roadmap
 
 1. Host a central server somewhere and store the files in S3.

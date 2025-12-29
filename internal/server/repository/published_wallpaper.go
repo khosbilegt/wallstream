@@ -56,6 +56,18 @@ func (r *PublishedWallpaperRepository) GetPublishedWallpapersByDeviceID(ctx cont
 	return publishedWallpapers, err
 }
 
+func (r *PublishedWallpaperRepository) GetPublishedWallpaperByHash(ctx context.Context, hash string) (*PublishedWallpaper, error) {
+	var publishedWallpaper PublishedWallpaper
+	err := r.col.FindOne(ctx, bson.M{"hash": hash}).Decode(&publishedWallpaper)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &publishedWallpaper, nil
+}
+
 func (r *PublishedWallpaperRepository) DeletePublishedWallpaperByHash(ctx context.Context, hash string) error {
 	_, err := r.col.DeleteOne(ctx, bson.M{"hash": hash})
 	return err

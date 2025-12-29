@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.io/khosbilegt/wallstream/internal/server/api"
+	"github.io/khosbilegt/wallstream/internal/server/api/handlers"
 	"github.io/khosbilegt/wallstream/internal/server/db"
 	"github.io/khosbilegt/wallstream/internal/server/repository"
 	"github.io/khosbilegt/wallstream/internal/server/service"
@@ -64,7 +65,7 @@ func main() {
 	publisherService := service.NewPublisherService(publisherRepo, publishedWallpaperRepo)
 
 	// Initialize handlers
-	handlers := api.NewHandlers(usersService, fileService, publisherService)
+	handlers := handlers.NewHandlers(handlers.NewUserHandlers(usersService), handlers.NewFileHandlers(fileService), handlers.NewPublisherHandlers(publisherService))
 
 	// Setup routes with Chi router
 	router := chi.NewRouter()
