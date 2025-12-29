@@ -64,6 +64,7 @@ func (s *PublisherService) GenerateUploadURL(ctx context.Context, userID, device
 	return uploadURL, nil
 }
 
+// TODO: Cleanup previous files
 // Publish wallpaper given file path that was already uploaded to the server
 func (s *PublisherService) PublishUploadedWallpaper(ctx context.Context, userID, deviceID, filename string) error {
 	publisherDevice, err := s.publisherRepo.GetPublisherDeviceByDeviceID(ctx, deviceID)
@@ -84,12 +85,14 @@ func (s *PublisherService) PublishUploadedWallpaper(ctx context.Context, userID,
 		return err
 	}
 
-	previousPublishedWallpaper, err := s.publishedWallpaperRepo.GetPublishedWallpaperByHash(ctx, hash)
+	previousPublishedWallpapers, err := s.publishedWallpaperRepo.GetPublishedWallpapersByDeviceID(ctx, hash)
 	if err != nil {
 		return err
 	}
-	if previousPublishedWallpaper != nil {
-		return fmt.Errorf("published wallpaper already exists for hash %s", hash)
+	for _, previousPublishedWallpaper := range previousPublishedWallpapers {
+		if previousPublishedWallpaper.Hash == hash {
+			return fmt.Errorf("published wallpaper already exists for hash %s", hash)
+		}
 	}
 	publishedWallpaper := &repository.PublishedWallpaper{
 		ID:        uuid.New().String(),

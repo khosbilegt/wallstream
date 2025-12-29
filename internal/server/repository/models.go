@@ -19,10 +19,9 @@ type PublishedWallpaper struct {
 }
 
 type PublisherDevice struct {
-	ID          string `json:"id" bson:"id"`
-	UserID      string `json:"user_id" bson:"user_id"`
-	DeviceID    string `json:"device_id" bson:"device_id"`
-	WallpaperId string `json:"wallpaper_id" bson:"wallpaper_id"`
-	CreatedAt   int64  `json:"created_at" bson:"created_at"`
-	UpdatedAt   int64  `json:"updated_at" bson:"updated_at"`
+	ID        string `json:"id" bson:"id"`
+	UserID    string `json:"user_id" bson:"user_id"`
+	DeviceID  string `json:"device_id" bson:"device_id"`
+	CreatedAt int64  `json:"created_at" bson:"created_at"`
+	UpdatedAt int64  `json:"updated_at" bson:"updated_at"`
 }

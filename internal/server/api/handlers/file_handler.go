@@ -15,13 +15,6 @@ func NewFileHandlers(fileService *service.FileService) *FileHandlers {
 	return &FileHandlers{fileService: fileService}
 }
 
-func (h *FileHandlers) UploadFile(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-}
-
 // Upload wallpaper to the server
 func (h *FileHandlers) UploadWallpaper(w http.ResponseWriter, r *http.Request) {
 	file, fileHeader, err := r.FormFile("file")
