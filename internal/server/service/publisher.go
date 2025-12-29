@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.io/khosbilegt/wallstream/internal/core/assets"
 	"github.io/khosbilegt/wallstream/internal/server/repository"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -31,16 +32,6 @@ func (s *PublisherService) CreatePublisherDevice(ctx context.Context, userID, de
 	return s.publisherRepo.CreatePublisherDevice(ctx, publisherDevice)
 }
 
-// Generate url to upload the wallpaper to the server
-func (s *PublisherService) GenerateUploadURL(ctx context.Context, userID, deviceID string) (string, error) {
-	// TODO: Make it rely on the user ID and device ID to generate a unique upload URL
-	// Generate a random string for the upload URL
-	randomString := uuid.New().String()
-	// Generate the upload URL
-	uploadURL := fmt.Sprintf("https://wallstream.io/upload/%s", randomString)
-	return uploadURL, nil
-}
-
 func (s *PublisherService) GetPublisherDevicesByUserID(ctx context.Context, userID string) ([]*repository.PublisherDevice, error) {
 	return s.publisherRepo.GetPublisherDevicesByUserID(ctx, userID)
 }
@@ -63,7 +54,59 @@ func (s *PublisherService) DeletePublisherDeviceByDeviceID(ctx context.Context, 
 	return s.publisherRepo.DeletePublisherDeviceByDeviceID(ctx, deviceID)
 }
 
+// Generate url to upload the wallpaper to the server
+func (s *PublisherService) GenerateUploadURL(ctx context.Context, userID, deviceID string) (string, error) {
+	// TODO: Make it rely on the user ID and device ID to generate a unique upload URL
+	// Generate a random string for the upload URL
+	randomString := uuid.New().String()
+	// Generate the upload URL
+	uploadURL := fmt.Sprintf("https://wallstream.io/upload/%s", randomString)
+	return uploadURL, nil
+}
+
 // Publish wallpaper given file path that was already uploaded to the server
-func (s *PublisherService) PublishUploadedWallpaper(ctx context.Context, userID, deviceID, filePath string) error {
+func (s *PublisherService) PublishUploadedWallpaper(ctx context.Context, userID, deviceID, filename string) error {
+	publisherDevice, err := s.publisherRepo.GetPublisherDeviceByDeviceID(ctx, deviceID)
+	if err != nil {
+		return err
+	}
+	if publisherDevice == nil {
+		return fmt.Errorf("no publisher device found for device %s", deviceID)
+	}
+	if publisherDevice.UserID != userID {
+		return fmt.Errorf("publisher device not found for user %s", userID)
+	}
+	filePath := "uploads/" + filename
+	hash, err := assets.HashFile(filePath)
+	if err != nil {
+		return err
+	}
+	publishedWallpaper := &repository.PublishedWallpaper{
+		ID:        uuid.New().String(),
+		UserID:    userID,
+		DeviceID:  deviceID,
+		Hash:      hash,
+		URL:       filePath,
+		CreatedAt: time.Now().Unix(),
+		UpdatedAt: time.Now().Unix(),
+	}
+	s.publishedWallpaperRepo.CreatePublishedWallpaper(ctx, publishedWallpaper)
 	return nil
+}
+
+func (s *PublisherService) GetPublishedWallpapersByUserID(ctx context.Context, userID string) ([]*repository.PublishedWallpaper, error) {
+	return s.publishedWallpaperRepo.GetPublishedWallpapersByUserID(ctx, userID)
+}
+
+func (s *PublisherService) GetPublishedWallpapersByDeviceID(ctx context.Context, userID string, deviceID string) ([]*repository.PublishedWallpaper, error) {
+	publishedWallpapers, err := s.publishedWallpaperRepo.GetPublishedWallpapersByDeviceID(ctx, deviceID)
+	if err != nil {
+		return nil, err
+	}
+	for _, publishedWallpaper := range publishedWallpapers {
+		if publishedWallpaper.UserID != userID {
+			return nil, fmt.Errorf("published wallpaper not found for user %s", userID)
+		}
+	}
+	return publishedWallpapers, nil
 }

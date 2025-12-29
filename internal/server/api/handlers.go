@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.io/khosbilegt/wallstream/internal/server/service"
+	"github.io/khosbilegt/wallstream/internal/server/utils"
 )
 
 type Handlers struct {
@@ -35,17 +37,21 @@ func (h *Handlers) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		http.Error(w, "invalid JSON body", http.StatusBadRequest)
+		writeJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "invalid JSON body",
+		})
 		return
 	}
 
 	apiKey, err := h.usersService.CreateUser(context.Background(), req.Username)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]string{"username": req.Username, "api_key": apiKey})
+	writeJSON(w, http.StatusOK, map[string]string{"username": req.Username, "api_key": apiKey})
 }
 
 func (h *Handlers) WebIndex(w http.ResponseWriter, r *http.Request) {
@@ -56,13 +62,17 @@ func (h *Handlers) WebIndex(w http.ResponseWriter, r *http.Request) {
 	}
 	err := templates.ExecuteTemplate(w, "index.html", data)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
 	}
 }
 
 func (h *Handlers) CreatePublisherDevice(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{
+			"error": "method not allowed",
+		})
 		return
 	}
 
@@ -76,7 +86,9 @@ func (h *Handlers) CreatePublisherDevice(w http.ResponseWriter, r *http.Request)
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		http.Error(w, "invalid JSON body", http.StatusBadRequest)
+		writeJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "invalid JSON body",
+		})
 		return
 	}
 
@@ -87,7 +99,9 @@ func (h *Handlers) CreatePublisherDevice(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	if publisherDevice != nil {
-		http.Error(w, "device ID already in use", http.StatusBadRequest)
+		writeJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "device ID already in use",
+		})
 		return
 	}
 
@@ -97,7 +111,7 @@ func (h *Handlers) CreatePublisherDevice(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]string{"device_id": req.DeviceID})
+	writeJSON(w, http.StatusOK, map[string]string{"device_id": req.DeviceID})
 }
 
 func (h *Handlers) GetPublisherDevices(w http.ResponseWriter, r *http.Request) {
@@ -111,16 +125,20 @@ func (h *Handlers) GetPublisherDevices(w http.ResponseWriter, r *http.Request) {
 
 	publisherDevices, err := h.publisherService.GetPublisherDevicesByUserID(r.Context(), userID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
 		return
 	}
 
-	json.NewEncoder(w).Encode(publisherDevices)
+	writeJSON(w, http.StatusOK, publisherDevices)
 }
 
 func (h *Handlers) GetPublisherDeviceByDeviceID(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{
+			"error": "method not allowed",
+		})
 		return
 	}
 
@@ -129,16 +147,20 @@ func (h *Handlers) GetPublisherDeviceByDeviceID(w http.ResponseWriter, r *http.R
 
 	publisherDevice, err := h.publisherService.GetPublisherDeviceByDeviceID(r.Context(), deviceID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
 		return
 	}
 
-	json.NewEncoder(w).Encode(publisherDevice)
+	writeJSON(w, http.StatusOK, publisherDevice)
 }
 
 func (h *Handlers) DeletePublisherDeviceByDeviceID(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{
+			"error": "method not allowed",
+		})
 		return
 	}
 
@@ -147,33 +169,18 @@ func (h *Handlers) DeletePublisherDeviceByDeviceID(w http.ResponseWriter, r *htt
 
 	err := h.publisherService.DeletePublisherDeviceByDeviceID(r.Context(), deviceID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
 		return
 	}
-}
-
-// Upload wallpaper to the server
-func (h *Handlers) UploadWallpaper(w http.ResponseWriter, r *http.Request) {
-	file, fileHeader, err := r.FormFile("file")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	defer file.Close()
-
-	filename, err := h.fileService.UploadFileStream(r.Context(), file, fileHeader.Filename)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	json.NewEncoder(w).Encode(map[string]string{"filename": filename})
-
 }
 
 func (h *Handlers) GetUploadURL(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{
+			"error": "method not allowed",
+		})
 		return
 	}
 
@@ -189,5 +196,139 @@ func (h *Handlers) GetUploadURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]string{"upload_url": uploadURL})
+	writeJSON(w, http.StatusOK, map[string]string{"upload_url": uploadURL})
+}
+
+// Upload wallpaper to the server
+func (h *Handlers) UploadWallpaper(w http.ResponseWriter, r *http.Request) {
+	file, fileHeader, err := r.FormFile("file")
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{
+			"error": err.Error(),
+		})
+		return
+	}
+	defer file.Close()
+
+	filename, err := h.fileService.UploadFileStream(r.Context(), file, fileHeader.Filename)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{"filename": filename})
+
+}
+func (h *Handlers) PublishUploadedWallpaper(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{
+			"error": "method not allowed",
+		})
+		return
+	}
+
+	// Validate user ID
+	userID, ok := utils.GetStringFromContext(r.Context(), "user_id")
+	if !ok {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{
+			"error": "missing or invalid user_id",
+		})
+		return
+	}
+
+	var req struct {
+		Filename string `json:"filename"`
+		DeviceID string `json:"device_id"`
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "invalid JSON body",
+		})
+		return
+	}
+
+	if err := h.publisherService.PublishUploadedWallpaper(
+		r.Context(),
+		userID,
+		req.DeviceID,
+		req.Filename,
+	); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	writeJSON(w, http.StatusOK, map[string]string{
+		"message": "Wallpaper published successfully",
+	})
+}
+
+func (h *Handlers) GetPublishedWallpapers(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{
+			"error": "method not allowed",
+		})
+		return
+	}
+
+	// Get the user ID from the request context
+	userID := r.Context().Value("user_id").(string)
+
+	publishedWallpapers, err := h.publisherService.GetPublishedWallpapersByUserID(r.Context(), userID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, publishedWallpapers)
+}
+
+func (h *Handlers) GetPublishedWallpapersByDeviceID(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{
+			"error": "method not allowed",
+		})
+		return
+	}
+
+	userID, ok := utils.GetStringFromContext(r.Context(), "user_id")
+	if !ok {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{
+			"error": "missing or invalid user_id",
+		})
+		return
+	}
+
+	deviceID := chi.URLParam(r, "deviceID")
+	if deviceID == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "missing deviceID",
+		})
+		return
+	}
+
+	publishedWallpapers, err := h.publisherService.
+		GetPublishedWallpapersByDeviceID(r.Context(), userID, deviceID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, publishedWallpapers)
+}
+
+func writeJSON(w http.ResponseWriter, status int, v any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(v)
 }

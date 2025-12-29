@@ -36,5 +36,9 @@ func (rts *Routes) RegisterRoutes() {
 		r.Get("/api/publisher/devices", rts.handlers.GetPublisherDevices)
 		r.Get("/api/publisher/devices/{deviceID}", rts.handlers.GetPublisherDeviceByDeviceID)
 		r.Delete("/api/publisher/devices/{deviceID}", rts.handlers.DeletePublisherDeviceByDeviceID)
+		r.Get("/api/publisher/devices/{deviceID}/upload-url", rts.handlers.GetUploadURL)
+		r.Post("/api/publisher/wallpaper", rts.handlers.PublishUploadedWallpaper)
+		r.Get("/api/publisher/wallpaper", rts.handlers.GetPublishedWallpapers)
+		r.Get("/api/publisher/wallpaper/{deviceID}", rts.handlers.GetPublishedWallpapersByDeviceID)
 	})
 }

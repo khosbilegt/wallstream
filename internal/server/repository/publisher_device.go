@@ -41,6 +41,9 @@ func (r *PublisherDeviceRepository) GetPublisherDevicesByUserID(ctx context.Cont
 func (r *PublisherDeviceRepository) GetPublisherDeviceByDeviceID(ctx context.Context, deviceID string) (*PublisherDevice, error) {
 	var publisherDevice PublisherDevice
 	err := r.col.FindOne(ctx, bson.M{"device_id": deviceID}).Decode(&publisherDevice)
+	if err == mongo.ErrNoDocuments {
+		return nil, nil
+	}
 	return &publisherDevice, err
 }
 
