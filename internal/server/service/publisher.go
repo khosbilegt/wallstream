@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.io/khosbilegt/wallstream/internal/core/assets"
 	"github.io/khosbilegt/wallstream/internal/server/repository"
+	shared "github.io/khosbilegt/wallstream/internal/shared"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -79,7 +79,7 @@ func (s *PublisherService) PublishUploadedWallpaper(ctx context.Context, userID,
 	}
 	// Check hash of the file exists in the database
 	filePath := "uploads/" + filename
-	hash, err := assets.HashFile(filePath)
+	hash, err := shared.HashFile(filePath)
 
 	if err != nil {
 		return err

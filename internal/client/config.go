@@ -1,4 +1,4 @@
-package core
+package client
 
 import (
 	"fmt"
@@ -9,14 +9,8 @@ import (
 )
 
 type Config struct {
-	// Cache directory for downloaded wallpapers
-	CacheDir string
-
-	// Polling interval for checking publisher/server updates
+	CacheDir     string
 	PollInterval time.Duration
-
-	// Publisher ID (for subscribers or publisher agent)
-	PublisherID string
 }
 
 // DefaultConfig returns a cross-platform default configuration
@@ -28,8 +22,7 @@ func DefaultConfig() (*Config, error) {
 
 	return &Config{
 		CacheDir:     cacheDir,
-		PollInterval: 10 * time.Second, // default polling interval
-		PublisherID:  "default",        // override as needed
+		PollInterval: 10 * time.Second,
 	}, nil
 }
 
