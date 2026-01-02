@@ -20,6 +20,13 @@ It runs as a background service and works across Windows, macOS, and Linux.`,
 	},
 }
 
+func init() {
+	// Global flags
+	rootCmd.PersistentFlags().String("server", "", "Server URL (default: http://localhost:8080)")
+	rootCmd.PersistentFlags().String("username", "", "Username for authentication")
+	rootCmd.PersistentFlags().String("api-key", "", "API key for authentication")
+}
+
 // Execute is the CLI entrypoint
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
